@@ -300,13 +300,13 @@ if (file_exists($imageAnimationPath)) {
 	
 	.related-product-item-image {
 		margin-bottom: 1rem;
+		box-shadow: 2px 2px 4px #ccc;
 	}
 	
 	.related-product-item-type {
-		font-size: 18px;
+		font-size: 12px;
 		margin-bottom: 0.5rem;
 		color: #161616;
-		text-transform: uppercase;
 	}
 	
 	.related-product-item-sku {
@@ -577,22 +577,67 @@ if (file_exists($imageAnimationPath)) {
 	</div>
 	
 	<?php 
+	// *** BẮT ĐẦU PHẦN SỬA LỖI SẢN PHẨM LIÊN QUAN ***
 	$db    = JFactory::getDBO();
 	$query = $db->getQuery(true);
-	// Select the required fields from the table.
-	$query->select(
-				'DISTINCT a.*'
-		);
-	$query->from('`#__prime_tiles` AS a');	
-	$query->where('a.state = 1');	
-	$query->where('(a.type = '.intval($this->item->type_id).')');
+
+	// 1. Sửa câu truy vấn để lấy sản phẩm ngẫu nhiên
+	$query->select('DISTINCT a.*')
+		  ->from('`#__prime_tiles` AS a')
+		  ->where('a.state = 1')
+		  ->where('a.id != ' . (int) $this->item->id); // Loại trừ sản phẩm hiện tại
+
+	// Lấy sản phẩm cùng kích thước (lấy theo ID kích thước đầu tiên của sản phẩm hiện tại)
+	if (!empty($this->item->size_id[0])) {
+		$query->where('a.size = ' . (int) $this->item->size_id[0]);
+	}
+	
+	$query->order('RAND()'); // Sửa lại cú pháp sắp xếp ngẫu nhiên
 	$query->setLimit(10);
 	
 	$db->setQuery($query);
 	$related_rows = $db->loadObjectList();
-	//list related items
+
+	// 2. Xử lý để chuyển ID sang Tên cho Color và Size
+	if (!empty($related_rows)) {
+		$color_ids = [];
+		$size_ids = [];
+		foreach ($related_rows as $row) {
+			if (!empty($row->color)) $color_ids[] = $row->color;
+			if (!empty($row->size)) $size_ids[] = $row->size;
+		}
+
+		$color_map = [];
+		$size_map = [];
+
+		if (!empty($color_ids)) {
+			$query_colors = $db->getQuery(true)
+				->select('id, color')->from('#__prime_colors')
+				->where('id IN (' . implode(',', array_unique($color_ids)) . ')');
+			$color_map = $db->setQuery($query_colors)->loadObjectList('id');
+		}
+
+		if (!empty($size_ids)) {
+			$query_sizes = $db->getQuery(true)
+				->select('id, size')->from('#__prime_sizes')
+				->where('id IN (' . implode(',', array_unique($size_ids)) . ')');
+			$size_map = $db->setQuery($query_sizes)->loadObjectList('id');
+		}
+
+		// Gán lại tên vào danh sách sản phẩm liên quan
+		foreach ($related_rows as $row) {
+			if (isset($color_map[$row->color])) {
+				$row->color = $color_map[$row->color]->color;
+			}
+			if (isset($size_map[$row->size])) {
+				$row->size = $size_map[$row->size]->size;
+			}
+		}
+	}
+	// *** KẾT THÚC PHẦN SỬA LỖI ***
 	?>
-	<?php if(sizeof($related_rows)) : ?>
+
+	<?php if(!empty($related_rows)) : ?>
 	<div class="related-products">
 		<div class="related-products-heading">
 			<?php echo JText::_( 'Có thể bạn quan tâm' );?>
