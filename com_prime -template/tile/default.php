@@ -300,7 +300,7 @@ if (file_exists($imageAnimationPath)) {
 	
 	.related-product-item-image {
 		margin-bottom: 1rem;
-		box-shadow: 2px 2px 4px #ccc;
+		box-shadow: 0px 0px 5px #ccc;
 	}
 	
 	.related-product-item-type {
