@@ -21,6 +21,46 @@ use Joomla\Utilities\ArrayHelper;
 
 HTMLHelper::addIncludePath(JPATH_COMPONENT . '/helpers');
 
+// *** BẮT ĐẦU PHẦN THÊM MỚI CHO CHỨC NĂNG PHÓNG TO ẢNH ***
+$doc = Factory::getDocument();
+
+// 1. Tải thư viện Lity Lightbox (CSS và JS)
+$doc->addStyleSheet('https://cdnjs.cloudflare.com/ajax/libs/lity/2.4.1/lity.min.css');
+$doc->addScript('https://cdnjs.cloudflare.com/ajax/libs/lity/2.4.1/lity.min.js');
+
+// 2. Thêm CSS cho nút bấm phóng to
+$style = "
+.swiper-slide {
+    position: relative; /* Đảm bảo slide có thể chứa nút được định vị tuyệt đối */
+}
+.zoom-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10; /* Đảm bảo nút luôn nổi lên trên */
+    background: rgba(0,0,0,0.5);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    text-decoration: none;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
+}
+.zoom-button:hover {
+    background: rgba(0,0,0,0.8);
+    color: white;
+    transform: scale(1.1);
+}
+";
+$doc->addStyleDeclaration($style);
+// *** KẾT THÚC PHẦN THÊM MỚI ***
+
+
 $template = HelixUltimate\Framework\Platform\Helper::loadTemplateData();
 $tmpl_params = $template->params;
 
@@ -29,7 +69,7 @@ $imageAnimationPath = JPATH_BASE . '/images/phoi-canh/'.$this->item->sku.'.jpg';
 $imageUrlAnimation = JURI::base() . 'images/phoi-canh/'.$this->item->sku.'.jpg';	
 $imageFiles = glob($imageFolderPath . '*.jpg');
 $imageUrls = array_map(function ($path) {
-	return str_replace(JPATH_BASE, rtrim(JURI::base(), '/'), $path); // Dùng rtrim() để loại bỏ dấu '/' ở cuối base URL
+	return str_replace(JPATH_BASE, rtrim(JURI::base(), '/'), $path);
 }, $imageFiles);
 if (file_exists($imageAnimationPath)) {
 	$imageUrls[] = $imageUrlAnimation;
@@ -315,6 +355,8 @@ if (file_exists($imageAnimationPath)) {
 					    foreach ($imageUrls as $imageUrl) {
 							echo '<div class="swiper-slide">';
 							echo '<img src="' . $imageUrl . '" alt="Image">';
+							// *** THÊM NÚT PHÓNG TO ***
+							echo '<a href="' . $imageUrl . '" data-lity class="zoom-button" title="Phóng to ảnh"><span class="icon-search-plus" aria-hidden="true"></span></a>';
 							echo '</div>';
 					    }
 					  ?>
@@ -335,12 +377,6 @@ if (file_exists($imageAnimationPath)) {
 					<div class="swiper-button swiper-button-next"></div>
 					<div class="swiper-button swiper-button-prev"></div>
 				</div>
-				<div class="gallery-view-all-container">
-                    <a href="#" id="gallery-view-all-button" class="btn btn-outline-primary">
-                        <span class="icon-th" aria-hidden="true"></span>
-                        Xem tất cả ảnh
-                    </a>
-                </div>
 			</div>
 			<div class="product-info">
 				<div class="product-heading">
@@ -596,7 +632,6 @@ if (file_exists($imageAnimationPath)) {
 </div>
 
 
-<!-- Initialize Swiper  -->
 <script>
 	// Initialize the thumbs slider
 	const thumbsSwiper = new Swiper('.product-thumbnails', {
@@ -649,4 +684,3 @@ if (file_exists($imageAnimationPath)) {
 	  },
 	});
 </script>
-
